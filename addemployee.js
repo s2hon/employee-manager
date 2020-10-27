@@ -3,12 +3,14 @@ const mysql = require('mysql');
 const init = require('./app');
 const role = ['CFO', 'VP', 'Executive Assistant',
 'Accounting Manager','Accountant',
-'Marketing_Manager','Marketing Coordinator',
-'Productions_Manager','Production Coordinator', 
+'Marketing Manager','Marketing Coordinator',
+'Productions Manager','Production Coordinator', 
 'Operations Manager', 'Operations Coordinator', 
 'HR Generalist','Attorney/Lawyer'];
 const manager = ['none'];
 let managerId = '';
+let x = '';
+let y = '';
 
 const connection = mysql.createConnection({
     host:'localhost',
@@ -31,6 +33,23 @@ function currentmanager () {
         })
     }) 
 };
+
+function findManagerId () {
+    return new Promise (function (resolve){
+        console.log("One moment please...\n");
+        [x,y] = answer.managers.split('',2)
+        connection.query("SELECT id FROM employee WHERE first_name='"+x+"' AND last_name='"+y+"'", function (err, res){
+            if (err) throw err;
+            console.log(res);
+            managerId = res;
+                resolve();
+        });
+
+    }) 
+};
+
+
+
 
 function secondQuestion () {
     return inquirer.prompt ([
@@ -91,15 +110,12 @@ async function addEmployee(){
         let answer = await secondQuestion();
         switch (answer.managers){
             case 'none':
-                return managerId='0';
+                managerId='0';
+                break;
             default:
-                let [x,y] = answer.managers.split('',2)
-                connection.query("SELECT id FROM employee WHERE first_name='"+x+"' AND last_name='"+y+"'", function (err, res){
-                if (err) throw err;
-                console.log(res);
-                return managerId = res;
-            })
-        };
+                findManagerId();
+                break;
+            }
         let query = connection.query(
             "INSERT INTO employee SET ?",
             {first_name: answer.first,
