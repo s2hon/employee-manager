@@ -4,15 +4,16 @@ const firstQuestion = require('./question.js')
 const department = ['Executive','Accounting/Finance','Marketing','Production','Operations','HR','Legal'];
 const role = ['CFO', 'VP', 'Executive Assistant',
 'Accounting Manager','Accountant',
-'Marketing_Manager','Marketing Coordinator',
-'Productions_Manager','Production Coordinator', 
+'Marketing Manager','Marketing Coordinator',
+'Productions Manager','Production Coordinator', 
 'Operations Manager', 'Operations Coordinator', 
 'HR Generalist','Attorney/Lawyer'];
-const manager = ['none'];
-let managerId = '';
+let manager = ['none'];
+let managerId = [];
+let departId = [];
 let x = '';
 let y = '';
-const listed = [];
+let listed = [];
 
 
 
@@ -48,6 +49,10 @@ async function init () {
                 return viewManager();
             case 'Add Employees':
                 return addEmployee();
+            case 'Add Role':
+                return addRole();
+            // case 'Add Department':
+            //     return addDepart();
             case 'Remove Employees':
                 return removeEmployee();
             case 'Update Employee Role':
@@ -148,12 +153,23 @@ function currentmanager () {
 function findManagerId () {
     return new Promise (function (resolve){
         console.log("One moment please...\n");
-        [x,y] = answer.managers.split('',2)
+        [x,y] = answer.managers.split(' ',2)
         connection.query("SELECT id FROM employee WHERE first_name='"+x+"' AND last_name='"+y+"'", function (err, res){
             if (err) throw err;
             console.log(res);
-            managerId = res;
-                resolve();
+            resolve();
+        });
+
+    }) 
+};
+
+function findDepartId () {
+    return new Promise (function (resolve){
+        console.log("One moment please...\n");
+        connection.query("SELECT id FROM depart WHERE name='"+x+"'", function (err, res){
+            if (err) throw err;
+            console.log(res);
+            resolve();
         });
 
     }) 
@@ -221,7 +237,7 @@ async function addEmployee(){
                 managerId='0';
                 break;
             default:
-                findManagerId();
+                managerId = findManagerId();
                 break;
             }
         let query = connection.query(
@@ -229,7 +245,7 @@ async function addEmployee(){
             {first_name: answer.first,
             last_name: answer.last,
             role_id: (role.indexOf(answer.role)+1),
-            manager_id: managerId
+            manager_id: managerId[0].id
             },
                 function(err, res){
                     if (err) throw err;
@@ -237,6 +253,7 @@ async function addEmployee(){
                 }
             );
             console.table(query.sql);
+            listed = [];
             init();
         }
         catch(err) {
@@ -244,6 +261,68 @@ async function addEmployee(){
         
         }
 };
+
+async function addRole(){
+    try{
+        let answer = await inquirer.prompt ([
+            {type: 'input',
+            name: 'newrole',
+            message: 'What is the name of the role?',
+            validate: answer => {
+                if (answer) {
+                    return true;}
+                else {
+                    console.log("please enter the name of this role");
+                    return false;}
+                }
+            },
+            {type: 'input',
+            name: 'salary',
+            message: 'What is the salary of this role?',
+            validate: answer => {
+                if (answer) {
+                    return true;}
+                else {
+                    console.log("please enter the salary of this role");
+                    return false;}
+                }
+            },
+            {type: 'list',
+            name: 'depart',
+            message: 'What department is the role in?',
+            choices: department,
+            validate: answer =>{
+                if (answer.length !== 1) {
+                    console.log('You must to select only one option');
+                    return false;
+                } else {
+                    return true;
+                    }
+                }
+            }
+        ]);
+        x = answer.depart
+        departId = await findDepartId(x);
+        let query = connection.query(
+            "INSERT INTO role SET ?",
+            [answer.newrole,
+            answer.salary,
+            departId.id
+            ],
+                function(err, res){
+                    if (err) throw err;
+                    console.log(res.affectedRows + ' role added!');
+                }
+            );
+            console.table(query.sql);
+            init();
+        }
+        catch(err) {
+            console.log (err);
+        }
+};
+
+
 
 async function removeEmployee(){
     try{
@@ -334,68 +413,58 @@ async function UpdateEmployee(){
     }
 };
 
-// async function UpdateManager(){
-//     function viewManager() {
-//         console.log("Selecting all managers...\n");
-//         connection.query("SELECT first_name, last_name FROM employee WHERE (employee.manager_id = 0)", function (err, res){
-//             if (err) throw err;
-//                 res.forEach((res) => {
-//                 const managerName = res.first_name + " " + res.last_name;
-//                 manager.push(managerName);
-//                 console.table(res);
-//             })
-//         })
-//     };
-//     try{
-//         await currentEmployees();
-//         let answer = await inquirer.prompt ([
-//         {type: 'list',
-//         name: 'update',
-//         message: 'Which employee would you like to update?',
-//         choices: listed,
-//         validate: answer =>{
-//             if (answer.length !== 1) {
-//                 console.log('You must to select only one option');
-//                 return false;
-//             } else {
-//                 return true;
-//                 }
-//             }},
-//         {type: 'list',
-//         name: 'newmanager',
-//         message: 'Which manager would you like to re-assign the employee to?',
-//         choices: manager,
-//         validate: answer =>{
-//             if (answer.length !== 1) {
-//                 console.log('You must to select only one option');
-//                 return false;
-//             } else {
-//                 return true;
-//                 }
-//         }
-//         }
-//         ]);
+async function UpdateManager(){
+    try{
+        await currentEmployees();
+        await currentmanager();
+        let answer = await inquirer.prompt ([
+        {type: 'list',
+        name: 'update',
+        message: 'Which employee would you like to update?',
+        choices: listed,
+        validate: answer =>{
+            if (answer.length !== 1) {
+                console.log('You must to select only one option');
+                return false;
+            } else {
+                return true;
+                }
+            }},
+        {type: 'list',
+        name: 'managers',
+        message: 'Which manager would you like to re-assign the employee to?',
+        choices: manager,
+        validate: answer =>{
+            if (answer.length !== 1) {
+                console.log('You must to select only one option');
+                return false;
+            } else {
+                return true;
+                }
+        }
+        }
+        ]);
+        let [x,y] = answer.update.split(' ',2);
+        console.log("Updating "+answer.update+"....\n");
+        connection.query(
+            "UPDATE employee SET ? WHERE first_name='"+x+"' AND last_name='"+y+"'",
+            [{
+                managerId: findManagerId(answer.managers)
+            }],
+            function(err, res) {
+            if (err) throw err;
+            console.log(res.affectedRows + " employee updated!\n");
+            listed = [];
+            manager = ['none'];
+            managerId = '';
+            init();
+            }
+        );
 
-//         let [x,y] = answer.update.split(' ',2);
-//         console.log("Updating "+answer.update+"....\n");
-//         connection.query(
-//             "UPDATE employee SET ? WHERE first_name='"+x+"' AND last_name='"+y+"'",
-//             [{
-//                 manager_id: (role.indexOf(answer.newmanager)+1)
-//             }],
-//             function(err, res) {
-//             if (err) throw err;
-//             console.log(res.affectedRows + " employee updated!\n");
-//             init();
-//             }
-//         );
+    }
+    catch(error){
+        console.log(error);
+    }
+};
 
-//     }
-//     catch(error){
-//         console.log(error);
-//     }
-// };
-
-connect().then(init)
-
-module.exports = init
+connect().then(init);
