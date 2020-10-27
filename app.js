@@ -9,10 +9,8 @@ const role = ['CFO', 'VP', 'Executive Assistant',
 'Operations Manager', 'Operations Coordinator', 
 'HR Generalist','Attorney/Lawyer'];
 let manager = ['none'];
-let managerId = [];
-let departId = [];
-let x = '';
-let y = '';
+let departId = '';
+let managerId = '';
 let listed = [];
 
 
@@ -51,8 +49,8 @@ async function init () {
                 return addEmployee();
             case 'Add Role':
                 return addRole();
-            // case 'Add Department':
-            //     return addDepart();
+            case 'Add Department':
+                return addDepart();
             case 'Remove Employees':
                 return removeEmployee();
             case 'Update Employee Role':
@@ -156,7 +154,8 @@ function findManagerId () {
         [x,y] = answer.managers.split(' ',2)
         connection.query("SELECT id FROM employee WHERE first_name='"+x+"' AND last_name='"+y+"'", function (err, res){
             if (err) throw err;
-            console.log(res);
+            managerId = res[0].id;
+            console.log(departId);
             resolve();
         });
 
@@ -168,7 +167,7 @@ function findDepartId () {
         console.log("One moment please...\n");
         connection.query("SELECT id FROM depart WHERE name='"+x+"'", function (err, res){
             if (err) throw err;
-            console.log(res);
+            departId = res[0].id;
             resolve();
         });
 
@@ -237,16 +236,16 @@ async function addEmployee(){
                 managerId='0';
                 break;
             default:
-                managerId = findManagerId();
+                let managerId = findManagerId();
                 break;
             }
         let query = connection.query(
             "INSERT INTO employee SET ?",
-            {first_name: answer.first,
-            last_name: answer.last,
-            role_id: (role.indexOf(answer.role)+1),
-            manager_id: managerId[0].id
-            },
+            [answer.first,
+            answer.last,
+            (role.indexOf(answer.role)+1),
+            managerId[0].id
+            ],
                 function(err, res){
                     if (err) throw err;
                     console.log(res.affectedRows + ' employee added!');
@@ -302,13 +301,14 @@ async function addRole(){
             }
         ]);
         x = answer.depart
-        departId = await findDepartId(x);
+        let z = await findDepartId(x);
         let query = connection.query(
             "INSERT INTO role SET ?",
-            [answer.newrole,
-            answer.salary,
-            departId.id
-            ],
+            [{
+            title: answer.newrole,
+            salary: answer.salary,
+            depart_id: departId
+            }],
                 function(err, res){
                     if (err) throw err;
                     console.log(res.affectedRows + ' role added!');
@@ -322,6 +322,38 @@ async function addRole(){
         }
 };
 
+async function addDepart(){
+    try{
+        let answer = await inquirer.prompt ([
+            {type: 'input',
+            name: 'depart',
+            message: 'What is the department you would like to add?',
+            validate: answer => {
+                if (answer) {
+                    return true;}
+                else {
+                    console.log("please enter the salary of this role");
+                    return false;}
+                }
+            }
+        ]);
+        let query = connection.query(
+            "INSERT INTO depart SET ?",
+            [{
+            name: answer.depart,
+            }],
+                function(err, res){
+                    if (err) throw err;
+                    console.log(res.affectedRows + ' department added!');
+                }
+            );
+            console.table(query.sql);
+            init();
+        }
+        catch(err) {
+            console.log (err);
+        }
+};
 
 
 async function removeEmployee(){

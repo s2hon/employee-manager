@@ -6,6 +6,7 @@ const userChoice = [
     'View All Managers',
     'Add Employees',
     'Add Role',
+    'Add Department',
     'Remove Employees',
     'Update Employee Role',
     'Update Manager Role',
