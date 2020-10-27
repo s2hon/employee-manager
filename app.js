@@ -3,8 +3,8 @@ const mysql = require ('mysql')
 const firstQuestion = require('./question.js')
 const addEmployee = require('./addemployee')
 const department = ['Executive','Accounting/Finance','Marketing','Production','Operations','HR','Legal'];
-let depart_id = '';
 const listed = [];
+
 
 
 const connection = mysql.createConnection({
@@ -102,23 +102,25 @@ function viewManager() {
 
 };
 
-
 const currentEmployees = function() {
-    connection.query('SELECT first_name, last_name FROM employee', function (err, res){
-        if (err) throw err;
-        for (let i=0; i<res.length; i++) {
-            let first = res[i].first_name;
-            let last =  res[i].last_name;
-            listed.push(first+' '+last);
-        }
+    return new Promise (function (resolve){
+        console.log("One moment please...\n");
+        connection.query('SELECT first_name, last_name FROM employee', function (err, res){
+            if (err) throw err;
+            for (let i=0; i<res.length; i++) {
+                let first = res[i].first_name;
+                let last =  res[i].last_name;
+                listed.push(first+' '+last);
+                resolve();
+            }
+        })
     })
 };
 
 async function removeEmployee(){
     try{
-      await currentEmployees();
-      console.log(listed);
-      let answer = await inquirer.prompt ([
+        await currentEmployees();
+        let answer = await inquirer.prompt ([
         {type: 'list',
         name: 'delete',
         message: 'Which employee would you like to remove?',
@@ -130,34 +132,28 @@ async function removeEmployee(){
             } else {
                 return true;
                 }
-        }}
-    ]);
-    console.log(answer.delete);
+            }}
+        ]);
+        let [x,y] = answer.delete.split(' ',2);
+        console.log(x);
+        console.log(y);
+        console.log("Deleting "+answer.delete+"....\n");
+        connection.query(
+            "DELETE FROM employee WHERE first_name='"+x+"' AND last_name='"+y+"'",
+            function(err, res) {
+            if (err) throw err;
+            console.log(res.affectedRows + " employee deleted!\n");
+            // Call readProducts AFTER the DELETE completes
+            init();
+          }
+        );
+
     }
     catch(error){
       console.log(error);
     }
   }
 
-
-// function  () {
-    
-    
-//     console.log("Deleting"+answer.delete+"....\n");
-//     connection.query(
-//       "DELETE FROM products WHERE ?",
-//       {
-//         flavor: "strawberry"
-//       },
-//       function(err, res) {
-//         if (err) throw err;
-//         console.log(res.affectedRows + " products deleted!\n");
-//         // Call readProducts AFTER the DELETE completes
-//         readProducts();
-//       }
-//     );
-// }
-
-
 connect().then(init)
 
+module.exports = init

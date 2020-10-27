@@ -1,5 +1,6 @@
 const inquirer = require ('inquirer');
 const mysql = require('mysql');
+const init = require('./app');
 const role = ['CFO', 'VP', 'Executive Assistant',
 'Accounting Manager','Accountant',
 'Marketing_Manager','Marketing Coordinator',
@@ -93,7 +94,7 @@ async function addEmployee(){
                 return managerId='0';
             default:
                 let [x,y] = answer.managers.split('',2)
-                connection.query("SELECT id FROM employee WHERE first_name ="+x+"AND last_name ="+y+")", function (err, res){
+                connection.query("SELECT id FROM employee WHERE first_name='"+x+"' AND last_name='"+y+"'", function (err, res){
                 if (err) throw err;
                 console.log(res);
                 return managerId = res;
