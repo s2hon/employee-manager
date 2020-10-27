@@ -3,6 +3,13 @@ const mysql = require ('mysql')
 const firstQuestion = require('./question.js')
 const addEmployee = require('./addemployee')
 const department = ['Executive','Accounting/Finance','Marketing','Production','Operations','HR','Legal'];
+const role = ['CFO', 'VP', 'Executive Assistant',
+'Accounting Manager','Accountant',
+'Marketing_Manager','Marketing Coordinator',
+'Productions_Manager','Production Coordinator', 
+'Operations Manager', 'Operations Coordinator', 
+'HR Generalist','Attorney/Lawyer'];
+const manager = ['none'];
 const listed = [];
 
 
@@ -43,7 +50,7 @@ async function init () {
                 return removeEmployee();
             case 'Update Employee Role':
                 return UpdateEmployee();
-            case 'Update Manager Role':
+            case 'Update Employee Manager':
                 return UpdateManager();
             case 'quit':
                 console.log('thank you for using employee manager 2020');
@@ -99,7 +106,12 @@ async function viewDepart() {
 };
 
 function viewManager() {
-
+    console.log("Selecting all managers...\n");
+    connection.query("SELECT first_name, last_name FROM employee WHERE (employee.manager_id = 0)", function (err, res){
+        if (err) throw err;
+            console.table(res);
+            init();
+        })
 };
 
 const currentEmployees = function() {
@@ -152,7 +164,119 @@ async function removeEmployee(){
     catch(error){
       console.log(error);
     }
-  }
+};
+
+async function UpdateEmployee(){
+    try{
+        await currentEmployees();
+        let answer = await inquirer.prompt ([
+        {type: 'list',
+        name: 'update',
+        message: 'Which employee would you like to update?',
+        choices: listed,
+        validate: answer =>{
+            if (answer.length !== 1) {
+                console.log('You must to select only one option');
+                return false;
+            } else {
+                return true;
+                }
+            }},
+        {type: 'list',
+        name: 'newrole',
+        message: 'Which role would you like to re-assign the employee to?',
+        choices: role,
+        validate: answer =>{
+            if (answer.length !== 1) {
+                console.log('You must to select only one option');
+                return false;
+            } else {
+                return true;
+                }
+        }
+        }
+        ]);
+        let [x,y] = answer.update.split(' ',2);
+        console.log("Updating "+answer.update+"....\n");
+        connection.query(
+            "UPDATE employee SET ? WHERE first_name='"+x+"' AND last_name='"+y+"'",
+            [{
+                role_id: (role.indexOf(answer.newrole)+1)
+            }],
+            function(err, res) {
+            if (err) throw err;
+            console.log(res.affectedRows + " employee updated!\n");
+            init();
+            }
+        );
+
+    }
+    catch(error){
+        console.log(error);
+    }
+};
+
+// async function UpdateManager(){
+//     function viewManager() {
+//         console.log("Selecting all managers...\n");
+//         connection.query("SELECT first_name, last_name FROM employee WHERE (employee.manager_id = 0)", function (err, res){
+//             if (err) throw err;
+//                 res.forEach((res) => {
+//                 const managerName = res.first_name + " " + res.last_name;
+//                 manager.push(managerName);
+//                 console.table(res);
+//             })
+//         })
+//     };
+//     try{
+//         await currentEmployees();
+//         let answer = await inquirer.prompt ([
+//         {type: 'list',
+//         name: 'update',
+//         message: 'Which employee would you like to update?',
+//         choices: listed,
+//         validate: answer =>{
+//             if (answer.length !== 1) {
+//                 console.log('You must to select only one option');
+//                 return false;
+//             } else {
+//                 return true;
+//                 }
+//             }},
+//         {type: 'list',
+//         name: 'newmanager',
+//         message: 'Which manager would you like to re-assign the employee to?',
+//         choices: manager,
+//         validate: answer =>{
+//             if (answer.length !== 1) {
+//                 console.log('You must to select only one option');
+//                 return false;
+//             } else {
+//                 return true;
+//                 }
+//         }
+//         }
+//         ]);
+
+//         let [x,y] = answer.update.split(' ',2);
+//         console.log("Updating "+answer.update+"....\n");
+//         connection.query(
+//             "UPDATE employee SET ? WHERE first_name='"+x+"' AND last_name='"+y+"'",
+//             [{
+//                 manager_id: (role.indexOf(answer.newmanager)+1)
+//             }],
+//             function(err, res) {
+//             if (err) throw err;
+//             console.log(res.affectedRows + " employee updated!\n");
+//             init();
+//             }
+//         );
+
+//     }
+//     catch(error){
+//         console.log(error);
+//     }
+// };
 
 connect().then(init)
 
