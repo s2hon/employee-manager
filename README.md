@@ -33,6 +33,7 @@ in terminal
     node app.js 
 to initiate employee tracker.
 
+![employee tracker](screenshot.gif)
 
 ### Technologies
 node, mysql, inquirer

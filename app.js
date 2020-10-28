@@ -134,7 +134,6 @@ function findManagerId () {
         console.log("One moment please...\n");
         connection.query("SELECT id FROM employee WHERE first_name='"+x+"' AND last_name='"+y+"'", function (err, res){
             if (err) throw err;
-
             managerId = res[0].id;
             resolve();
         });
@@ -319,6 +318,9 @@ async function addEmployee(){
             console.log(query.sql);
             listed = [];
             await currentEmployees();
+            listed = [];
+            manager = ['none'];
+            managerId = '';
             init();
         }
         catch(err) {
@@ -503,6 +505,9 @@ async function UpdateEmployee(){
             if (err) throw err;
             console.log(res.affectedRows + " employee updated!\n");
             listed = [];
+            managerId = '';
+            x = '';
+            y = '';
             init();
             }
         );
@@ -544,8 +549,16 @@ async function UpdateManager(){
             }
             }
         ]);
-        [x,y] = answer.managers.split(' ',2);
-        await findManagerId();
+        switch (answer.managers){
+            case 'none':
+                managerId='0';
+                break;
+            default:
+                [x,y] = answer.manager.split(' ',2)
+                await findManagerId();
+                break;
+        };
+        [x,y] = answer.update.split(' ',2)
         console.log("Updating "+answer.update+"....\n");
         connection.query(
             "UPDATE employee SET ? WHERE first_name='"+x+"' AND last_name='"+y+"'",
@@ -558,6 +571,8 @@ async function UpdateManager(){
             listed = [];
             manager = ['none'];
             managerId = '';
+            x = '';
+            y = '';
             init();
             }
         );
