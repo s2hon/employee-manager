@@ -4,12 +4,14 @@ const userChoice = [
     'View All Employees',
     'View All Employees By Department',
     'View All Managers',
+    'View All Roles',
+    'View All Departments',
     'Add Employees',
     'Add Role',
     'Add Department',
     'Remove Employees',
     'Update Employee Role',
-    'Update Manager Role',
+    'Update Employee Manager',
     'quit'
 ];
 
