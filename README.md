@@ -28,10 +28,10 @@ git fork and/or clone the repo. Initialize with
     npm install
 
 ## Usage
-in terminal
+Open app.js and update your mysql password.
+Afterwards, in the terminal initate the employee tracker with the following code:
 
     node app.js 
-to initiate employee tracker.
 
 ![employee tracker](screenshot.gif)
 
